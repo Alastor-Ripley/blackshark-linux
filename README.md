@@ -1,6 +1,6 @@
 # blackshark-ctl
 
-Linux userspace driver for the **Razer BlackShark V3 Pro** wireless headset.
+Linux userspace driver for the **Razer BlackShark V3 Pro** and **V3 X** wireless headsets.
 
 Controls sidetone, EQ presets, THX Spatial Audio, Active Noise Cancellation, and power savings — without Razer Synapse or Windows.
 
@@ -135,7 +135,7 @@ Add to your desktop autostart. Shows battery % in the tooltip, quick toggles and
 blackshark-gui
 ```
 
-Full settings panel. All changes are applied immediately via D-Bus and sync back to the tray and CLI in real time. The Advanced tab has daemon controls, a live log viewer, and an opt-in toggle for the experimental PipeWire game/chat mix feature.
+Full settings panel. All changes are applied immediately via D-Bus and sync back to the tray and CLI in real time. The Advanced tab has daemon controls, a live log viewer, and an opt-in toggle for experimental features.
 
 ---
 
@@ -145,12 +145,12 @@ Full settings panel. All changes are applied immediately via D-Bus and sync back
 blackshark-ctl  (CLI)  ──┐
 blackshark-tray (tray) ──┤  D-Bus: net.blackshark1 (session bus)
 blackshark-gui  (GUI)  ──┘
-                          │
-                    blacksharkd  (systemd user service)
-                          │
-                    /dev/hidraw*  (hidapi)
-                          │
-                    BlackShark V3 Pro dongle (USB)
+                           │
+                     blacksharkd  (systemd user service)
+                           │
+                     /dev/hidraw*  (hidapi)
+                           │
+                     BlackShark V3 Pro/V3 X dongle (USB)
 ```
 
 The daemon owns the HID device exclusively. All other tools talk to it over D-Bus (`net.blackshark1`, session bus, path `/net/blackshark1/Headset`). No tool other than the daemon touches `/dev/hidraw*`.
@@ -169,7 +169,7 @@ crates/
   blackshark-tray/   ksni system tray
   blackshark-gui/    slint settings GUI
 pkg/
-  99-blackshark.rules      udev rule
+  99-blackshark.rules      udev rules
   blacksharkd.service      systemd user unit
   blackshark-gui.desktop   app launcher entry (copy to ~/.local/share/applications/)
   blackshark-tray.desktop  autostart entry (copy to ~/.config/autostart/)
@@ -178,12 +178,13 @@ install.sh                 one-shot build + install script
 
 ---
 
-## udev rule
+## udev rules
 
-The udev rule grants the `users` group read/write access to the headset's HID interface:
+The udev rules grant the `users` group read/write access to the headsets' HID interfaces:
 
 ```
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1532", ATTRS{idProduct}=="0577", MODE="0660", GROUP="users"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1532", ATTRS{idProduct}=="057d", MODE="0660", GROUP="users"
 ```
 
 Make sure your user is in the `users` group (`groups $USER`). If not:
@@ -209,7 +210,14 @@ Security audit runs weekly via `cargo audit`. Release builds for `x86_64` are pr
 
 ## Device info
 
+**BlackShark V3 Pro:**
 - USB VID/PID: `0x1532` / `0x0577`
+- HID reports: 64 bytes, report ID `0x02`
+- Interface: HID interface 5, endpoint `0x84`
+- Protocol: custom Razer HID (not HID++ or OpenRazer-compatible)
+
+**BlackShark V3 X:**
+- USB VID/PID: `0x1532` / `0x057d`
 - HID reports: 64 bytes, report ID `0x02`
 - Interface: HID interface 5, endpoint `0x84`
 - Protocol: custom Razer HID (not HID++ or OpenRazer-compatible)
