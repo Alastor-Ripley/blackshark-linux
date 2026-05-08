@@ -5,9 +5,10 @@ use tracing::info;
 use blackshark_protocol::{Report, ResponseStatus, REPORT_LEN};
 
 const VID: u16 = 0x1532;
-const PID: u16 = 0x0577;
+const PID_V3_PRO: u16 = 0x0577;
+const PID_V3_X: u16 = 0x057d;
 
-/// Open the BlackShark V3 Pro HID device.
+/// Open the BlackShark V3 Pro or V3 X HID device.
 ///
 /// Must open interface 5 specifically — the dongle exposes multiple HID interfaces
 /// and api.open(VID, PID) picks the first enumerated, which varies across systems.
@@ -17,7 +18,7 @@ pub fn open() -> Result<HidDevice> {
 
     let mut target = None;
     for info in api.device_list() {
-        if info.vendor_id() == VID && info.product_id() == PID {
+        if info.vendor_id() == VID && (info.product_id() == PID_V3_PRO || info.product_id() == PID_V3_X) {
             let path = info.path().to_string_lossy();
             info!(
                 interface = info.interface_number(),
@@ -31,12 +32,12 @@ pub fn open() -> Result<HidDevice> {
     }
 
     match target {
-        None => bail!("BlackShark V3 Pro not found — is the dongle plugged in and do you have udev permission?"),
+        None => bail!("BlackShark V3 Pro/V3 X not found — is the dongle plugged in and do you have udev permission?"),
         Some(info) => {
             let path = info.path().to_string_lossy().into_owned();
             let dev = info
                 .open_device(&api)
-                .context("found BlackShark V3 Pro but failed to open control interface — check udev permissions")?;
+                .context("found BlackShark V3 Pro/V3 X but failed to open control interface — check udev permissions")?;
             info!(path = %path, "opened BlackShark control interface");
             Ok(dev)
         }
